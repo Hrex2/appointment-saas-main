@@ -57,15 +57,9 @@ app.post("/webhook", async (req, res) => {
 });
 
 // 🔥 PRODUCTION SETUP (React build serving)
-if (process.env.NODE_ENV === "production") {
-  const __dirnameResolved = path.resolve();
-
-  app.use(express.static(path.join(__dirnameResolved, "client/build")));
-
-  app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirnameResolved, "client/build", "index.html"));
-  });
-}
+app.get("/", (req, res) => {
+  res.send("Backend API is running 🚀")
+})
 
 // 🔹 Start server
 const PORT = process.env.PORT || 5000;
