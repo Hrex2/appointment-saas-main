@@ -15,6 +15,11 @@ const jwt = require("jsonwebtoken")
 
 // 🔢 Generate OTP
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000)
+const isAdminBypassEnabled = () => process.env.ADMIN_BYPASS_ENABLED === "true"
+const isAdminBypassUser = (email) =>
+    isAdminBypassEnabled() &&
+    email === process.env.ADMIN_EMAIL &&
+    process.env.ADMIN_BYPASS_CODE
 
 // 🟢 STEP 1: SEND OTP
 exports.sendOtp = async (req, res) => {
@@ -24,6 +29,11 @@ exports.sendOtp = async (req, res) => {
 
         if (!email) {
             return res.status(400).json({ message: "Email is required" })
+        }
+
+        if (isAdminBypassUser(email)) {
+            console.log("sendOtp:admin-bypass-available", { email })
+            return res.json({ message: "Admin bypass enabled" })
         }
 
         const otp = generateOTP()
@@ -62,6 +72,33 @@ exports.verifyOtp = async (req, res) => {
 
         if (!email || !otp) {
             return res.status(400).json({ message: "Email and OTP required" })
+        }
+
+        if (isAdminBypassUser(email) && otp === process.env.ADMIN_BYPASS_CODE) {
+            console.log("verifyOtp:admin-bypass-success", { email })
+
+            let user = await User.findOne({ email })
+
+            if (!user) {
+                user = new User({ email })
+            }
+
+            if (phone) {
+                user.phone = phone
+            }
+
+            await user.save()
+
+            const token = jwt.sign(
+                { email: user.email },
+                process.env.JWT_SECRET,
+                { expiresIn: "1d" }
+            )
+
+            return res.json({
+                message: "Admin bypass login successful",
+                token
+            })
         }
 
         const user = await User.findOne({ email })
