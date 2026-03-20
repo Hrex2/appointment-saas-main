@@ -15,10 +15,11 @@ const jwt = require("jsonwebtoken")
 
 // 🔢 Generate OTP
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000)
+const normalizeEmail = (value = "") => value.trim().toLowerCase()
 const isAdminBypassEnabled = () => process.env.ADMIN_BYPASS_ENABLED === "true"
 const isAdminBypassUser = (email) =>
     isAdminBypassEnabled() &&
-    email === process.env.ADMIN_EMAIL &&
+    normalizeEmail(email) === normalizeEmail(process.env.ADMIN_EMAIL) &&
     process.env.ADMIN_BYPASS_CODE
 
 // 🟢 STEP 1: SEND OTP
