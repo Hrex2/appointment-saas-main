@@ -20,25 +20,31 @@ const generateOTP = () => Math.floor(100000 + Math.random() * 900000)
 exports.sendOtp = async (req, res) => {
     try {
         const { email } = req.body
+        console.log("sendOtp:start", { email })
 
         if (!email) {
             return res.status(400).json({ message: "Email is required" })
         }
 
         const otp = generateOTP()
+        console.log("sendOtp:otp-generated")
 
         let user = await User.findOne({ email })
+        console.log("sendOtp:user-looked-up", { exists: !!user })
 
         if (!user) {
             user = new User({ email })
+            console.log("sendOtp:user-created")
         }
 
         user.otp = otp
         user.otpExpiry = Date.now() + 5 * 60 * 1000 // 5 min
 
         await user.save()
+        console.log("sendOtp:user-saved")
 
         await sendOTP(email, otp)
+        console.log("sendOtp:email-sent")
 
         res.json({ message: "OTP sent" })
 
@@ -52,6 +58,7 @@ exports.sendOtp = async (req, res) => {
 exports.verifyOtp = async (req, res) => {
     try {
         const { email, otp, phone } = req.body // 🔥 added phone
+        console.log("verifyOtp:start", { email, hasPhone: !!phone })
 
         if (!email || !otp) {
             return res.status(400).json({ message: "Email and OTP required" })
