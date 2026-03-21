@@ -24,7 +24,11 @@ const sendWhatsAppOTP = async (phone, otp) => {
     await client.messages.create({
         from: process.env.TWILIO_WHATSAPP_FROM,
         to,
-        body: `Your Appointment SaaS OTP is ${otp}`
+        body:
+            "APPOINTMENT SAAS LOGIN OTP\n" +
+            `Code: ${otp}\n` +
+            "Valid for 5 minutes.\n" +
+            "Do not share this code."
     })
 }
 
