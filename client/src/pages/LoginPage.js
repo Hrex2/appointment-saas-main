@@ -3,6 +3,7 @@ import { motion } from "framer-motion"
 import { MessageSquareMore, Sparkles } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { sendOtp, verifyOtp } from "../api/authApi"
+import { normalizePhoneDisplay, normalizeWhatsAppInput } from "../utils/phone"
 
 const waves = [0, 1, 2, 3]
 const burstPalette = [
@@ -138,7 +139,16 @@ const LoginPage = () => {
                     </div>
                     <div>
                         <label className="label-shell">WhatsApp number</label>
-                        <input className="input-shell" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="whatsapp:+919876543210" />
+                        <input
+                            className="input-shell"
+                            value={normalizePhoneDisplay(phone) || phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            onBlur={() => setPhone((current) => normalizeWhatsAppInput(current))}
+                            placeholder="+91 98765 43210"
+                        />
+                        <p className="mt-2 text-xs text-slate-500">
+                            Type a normal number. We automatically convert it to WhatsApp format.
+                        </p>
                     </div>
 
                     {otpSent && (

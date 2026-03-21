@@ -25,6 +25,8 @@ if (missingEnvVars.length > 0) {
     throw new Error(`Missing required environment variables: ${missingEnvVars.join(", ")}`)
 }
 
+app.set("trust proxy", 1)
+
 app.use(cors())
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: false }))

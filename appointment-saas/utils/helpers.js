@@ -14,7 +14,13 @@ const normalizePhone = (value = "") => {
         return `whatsapp:${normalized}`
     }
 
-    return trimmed.replace(/\s+/g, "")
+    const compact = trimmed.replace(/[^\d+]/g, "")
+
+    if (/^\d{10}$/.test(compact)) {
+        return `+91${compact}`
+    }
+
+    return compact
 }
 
 const formatWhatsAppPhone = (value = "") => {
