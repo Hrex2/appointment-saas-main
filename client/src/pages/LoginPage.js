@@ -4,7 +4,13 @@ import { MessageSquareMore, Sparkles } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { sendOtp, verifyOtp } from "../api/authApi"
 
-const waves = [0, 1, 2]
+const waves = [0, 1, 2, 3]
+const burstPalette = [
+    "rgba(56,189,248,0.42)",
+    "rgba(168,85,247,0.38)",
+    "rgba(236,72,153,0.35)",
+    "rgba(34,197,94,0.36)"
+]
 
 const LoginPage = () => {
     const [email, setEmail] = useState("")
@@ -14,15 +20,28 @@ const LoginPage = () => {
     const [loading, setLoading] = useState(false)
     const [message, setMessage] = useState("")
     const [error, setError] = useState("")
+    const [burstColor, setBurstColor] = useState(null)
+    const [blackout, setBlackout] = useState(false)
     const navigate = useNavigate()
 
     const glowVariants = useMemo(() => [
-        "rgba(56,189,248,0.20)",
-        "rgba(168,85,247,0.18)",
-        "rgba(236,72,153,0.14)"
+        "rgba(56,189,248,0.18)",
+        "rgba(168,85,247,0.16)",
+        "rgba(236,72,153,0.12)",
+        "rgba(34,197,94,0.10)"
     ], [])
 
+    const triggerBurst = (index) => {
+        setBurstColor(burstPalette[index % burstPalette.length])
+        setBlackout(true)
+
+        window.setTimeout(() => setBurstColor(null), 900)
+        window.setTimeout(() => setBlackout(false), 1200)
+    }
+
     const handleSendOtp = async () => {
+        triggerBurst(1)
+
         try {
             setLoading(true)
             setError("")
@@ -38,6 +57,8 @@ const LoginPage = () => {
     }
 
     const handleVerifyOtp = async () => {
+        triggerBurst(2)
+
         try {
             setLoading(true)
             setError("")
@@ -46,7 +67,7 @@ const LoginPage = () => {
             localStorage.setItem("token", response.data.token)
             localStorage.setItem("sessionUser", JSON.stringify(response.data.user))
             setMessage("Login successful. Redirecting to your dashboard...")
-            setTimeout(() => navigate("/"), 700)
+            setTimeout(() => navigate("/"), 900)
         } catch (err) {
             setError(err.response?.data?.message || err.response?.data?.error || "Unable to verify OTP")
         } finally {
@@ -56,21 +77,40 @@ const LoginPage = () => {
 
     return (
         <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#04070d] px-4 py-10">
-            <div className="absolute inset-0 bg-neon-grid bg-grid opacity-30" />
+            <div className="absolute inset-0 bg-neon-grid bg-grid opacity-20" />
 
             {waves.map((wave) => (
                 <motion.div
                     key={wave}
-                    animate={{ scale: [1, 1.18, 1], opacity: [0.26, 0.1, 0.22] }}
-                    className="absolute h-[28rem] w-[28rem] rounded-full blur-3xl"
-                    style={{
-                        left: `${12 + wave * 24}%`,
-                        top: `${10 + wave * 14}%`,
-                        background: `radial-gradient(circle, ${glowVariants[wave]}, transparent 65%)`
+                    animate={{
+                        scale: [1, 1.08 + wave * 0.03, 1.16 + wave * 0.04],
+                        opacity: [0.12, 0.22, 0]
                     }}
-                    transition={{ duration: otpSent ? 1.2 : 5.5, repeat: Infinity, delay: wave * 0.6 }}
+                    className="absolute rounded-full blur-3xl"
+                    style={{
+                        width: `${18 + wave * 5}rem`,
+                        height: `${18 + wave * 5}rem`,
+                        left: `${8 + wave * 18}%`,
+                        top: `${8 + (wave % 2) * 22}%`,
+                        background: `radial-gradient(circle, ${glowVariants[wave]}, transparent 68%)`
+                    }}
+                    transition={{
+                        duration: 18 + wave * 6,
+                        repeat: Infinity,
+                        repeatDelay: 2 + wave * 1.5,
+                        ease: "easeInOut"
+                    }}
                 />
             ))}
+
+            <motion.div
+                animate={{
+                    opacity: blackout ? 0.96 : 0,
+                    backgroundColor: blackout ? "rgba(0,0,0,0.9)" : "rgba(0,0,0,0)"
+                }}
+                className="pointer-events-none absolute inset-0 z-[5]"
+                transition={{ duration: 0.7, ease: "easeInOut" }}
+            />
 
             <motion.div
                 initial={{ opacity: 0, y: 24 }}
@@ -122,14 +162,41 @@ const LoginPage = () => {
 
                     <div className="flex gap-3 pt-2">
                         {!otpSent ? (
-                            <button className="button-primary flex-1" disabled={loading} onClick={handleSendOtp}>
-                                {loading ? "Sending..." : "Send OTP"}
-                            </button>
+                            <div className="relative flex-1">
+                                {burstColor && (
+                                    <motion.span
+                                        key={burstColor}
+                                        className="pointer-events-none absolute inset-[-0.55rem] rounded-[1.4rem] blur-2xl"
+                                        initial={{ opacity: 0, scale: 0.6 }}
+                                        animate={{ opacity: [0, 0.95, 0], scale: [0.6, 1.25, 1.45] }}
+                                        transition={{ duration: 0.9, ease: "easeOut" }}
+                                        style={{ background: `radial-gradient(circle, ${burstColor}, transparent 65%)` }}
+                                    />
+                                )}
+
+                                <button className="button-primary relative z-10 flex w-full justify-center" disabled={loading} onClick={handleSendOtp}>
+                                    {loading ? "Sending..." : "Send OTP"}
+                                </button>
+                            </div>
                         ) : (
                             <>
-                                <button className="button-primary flex-1" disabled={loading} onClick={handleVerifyOtp}>
-                                    {loading ? "Verifying..." : "Verify OTP"}
-                                </button>
+                                <div className="relative flex-1">
+                                    {burstColor && (
+                                        <motion.span
+                                            key={burstColor}
+                                            className="pointer-events-none absolute inset-[-0.55rem] rounded-[1.4rem] blur-2xl"
+                                            initial={{ opacity: 0, scale: 0.6 }}
+                                            animate={{ opacity: [0, 0.95, 0], scale: [0.6, 1.25, 1.45] }}
+                                            transition={{ duration: 0.9, ease: "easeOut" }}
+                                            style={{ background: `radial-gradient(circle, ${burstColor}, transparent 65%)` }}
+                                        />
+                                    )}
+
+                                    <button className="button-primary relative z-10 flex w-full justify-center" disabled={loading} onClick={handleVerifyOtp}>
+                                        {loading ? "Verifying..." : "Verify OTP"}
+                                    </button>
+                                </div>
+
                                 <button className="button-secondary" disabled={loading} onClick={() => setOtpSent(false)}>
                                     Edit
                                 </button>
@@ -144,7 +211,7 @@ const LoginPage = () => {
                         <span className="font-medium">Included UX details</span>
                     </div>
                     <p className="mt-2 leading-6 text-slate-400">
-                        Animated neon waves pulse on OTP send, and successful verification transitions directly into the protected dashboard shell.
+                        Ambient neon ripples rise slowly in the background until action, then a color burst blooms behind the button before the scene drops toward black.
                     </p>
                 </div>
             </motion.div>
