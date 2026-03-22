@@ -139,6 +139,7 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: "start"
     },
+    conversationResetAt: Date,
     tempName: String,
     tempDate: String
 }, { timestamps: true })

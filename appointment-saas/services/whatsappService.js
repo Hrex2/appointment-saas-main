@@ -326,6 +326,7 @@ const createUniqueAppointmentCode = async () => {
 
 const resetConversation = async (user) => {
     user.step = "select_language"
+    user.conversationResetAt = new Date()
     user.tempName = ""
     user.tempDate = ""
     await user.save()
@@ -342,6 +343,7 @@ exports.handleMessage = async (phone, msg) => {
             phone,
             name: "",
             language: "en",
+            conversationResetAt: new Date(),
             step: "select_language"
         })
         return content.en.languagePrompt
@@ -349,6 +351,15 @@ exports.handleMessage = async (phone, msg) => {
 
     if (isRestartCommand(msg)) {
         await resetConversation(user)
+        return content.en.languagePrompt
+    }
+
+    // Refresh the user immediately before interpreting the state machine so a
+    // rapid follow-up message (for example "Hi" then "2") sees the latest
+    // saved step instead of stale state from a concurrent webhook request.
+    user = await User.findById(user._id)
+
+    if (!user) {
         return content.en.languagePrompt
     }
 
@@ -360,6 +371,7 @@ exports.handleMessage = async (phone, msg) => {
         }
 
         user.language = language
+        user.conversationResetAt = undefined
         user.tempName = ""
         user.tempDate = ""
 
