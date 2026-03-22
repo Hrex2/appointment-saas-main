@@ -21,7 +21,7 @@ const sendWhatsAppOTP = async (phone, otp) => {
         throw new Error("A valid WhatsApp phone number is required")
     }
 
-    await client.messages.create({
+    const message = await client.messages.create({
         from: process.env.TWILIO_WHATSAPP_FROM,
         to,
         body:
@@ -30,6 +30,15 @@ const sendWhatsAppOTP = async (phone, otp) => {
             "Valid for 5 minutes.\n" +
             "Do not share this code."
     })
+
+    console.log("whatsappOtp:sent", {
+        sid: message.sid,
+        status: message.status,
+        to,
+        from: process.env.TWILIO_WHATSAPP_FROM
+    })
+
+    return message
 }
 
 module.exports = { sendWhatsAppOTP }

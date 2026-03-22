@@ -100,21 +100,37 @@ const linkUserByPhone = async (user, phone) => {
         throw new Error("This phone number is already linked to another account")
     }
 
-    phoneOwner.email = user.email
-    phoneOwner.phone = normalizedPhone
-    phoneOwner.otp = null
-    phoneOwner.otpExpiry = null
+    // Prefer the email-owned account as the primary record when both records belong
+    // to the same person. This avoids saving two documents with the same unique email.
+    user.phone = normalizedPhone
+    user.otp = null
+    user.otpExpiry = null
 
-    if (!phoneOwner.name && user.name) {
-        phoneOwner.name = user.name
+    if (!user.name && phoneOwner.name) {
+        user.name = phoneOwner.name
     }
 
-    ensureUserScaffold(phoneOwner)
+    if (!user.language && phoneOwner.language) {
+        user.language = phoneOwner.language
+    }
 
-    await phoneOwner.save()
-    await User.deleteOne({ _id: user._id })
+    ensureUserScaffold(user)
+    user.businessSettings = {
+        ...buildDefaultBusinessSettings(user),
+        ...phoneOwner.businessSettings?.toObject?.(),
+        ...user.businessSettings?.toObject?.(),
+        phoneNumber: normalizedPhone,
+        whatsappNumber: normalizedPhone
+    }
 
-    return phoneOwner
+    if (phoneOwner.subscription?.planKey && (!user.subscription || user.subscription.planKey === "free")) {
+        user.subscription = phoneOwner.subscription
+    }
+
+    await user.save()
+    await User.deleteOne({ _id: phoneOwner._id })
+
+    return user
 }
 
 const findOrCreateUserForOtp = async (email, phone) => {
@@ -180,14 +196,25 @@ exports.sendOtp = async (req, res) => {
                 return res.status(400).json({ message: "WhatsApp phone is required for WhatsApp OTP" })
             }
 
-            await sendWhatsAppOTP(phone, otp)
-            return res.json({ message: "OTP sent to WhatsApp" })
+            const message = await sendWhatsAppOTP(phone, otp)
+            return res.json({
+                message: "OTP sent to WhatsApp",
+                delivery: {
+                    sid: message.sid,
+                    status: message.status
+                }
+            })
         }
 
         await sendOTP(email, otp)
         res.json({ message: "OTP sent to email" })
     } catch (err) {
-        console.error("sendOtp error:", err)
+        console.error("sendOtp error:", {
+            message: err.message,
+            code: err.code,
+            status: err.status,
+            moreInfo: err.moreInfo
+        })
         res.status(500).json({ error: err.message })
     }
 }
