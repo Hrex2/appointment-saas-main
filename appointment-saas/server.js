@@ -76,6 +76,11 @@ const PORT = process.env.PORT || 5000
 connectDB().then(async () => {
     await ensureDefaultPlans()
 
+    console.log("app:version", {
+        renderGitCommit: process.env.RENDER_GIT_COMMIT || "unknown",
+        nodeEnv: process.env.NODE_ENV || "development"
+    })
+
     app.listen(PORT, () => {
         console.log(`Server running on port ${PORT}`)
     })

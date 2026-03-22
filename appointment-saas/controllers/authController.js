@@ -164,6 +164,7 @@ const findOrCreateUserForOtp = async (email, phone) => {
 exports.sendOtp = async (req, res) => {
     try {
         const { email = "", phone = "", channel = "whatsapp" } = req.body
+        console.log("sendOtp:start", { email, phone, channel })
 
         if (!email) {
             return res.status(400).json({ message: "Email is required" })
@@ -196,6 +197,7 @@ exports.sendOtp = async (req, res) => {
                 return res.status(400).json({ message: "WhatsApp phone is required for WhatsApp OTP" })
             }
 
+            console.log("sendOtp:dispatch-whatsapp", { email, phone })
             const message = await sendWhatsAppOTP(phone, otp)
             return res.json({
                 message: "OTP sent to WhatsApp",
